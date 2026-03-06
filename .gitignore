@@ -1,0 +1,47 @@
+# Build directories
+build/
+cmake-build-*/
+CMakeFiles/
+*.cmake.in
+
+# Compiled files
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Executables (in build or examples directory)
+*.exe
+*.out
+*.app
+build/comm_process
+build/business_process
+build/ui_process
+build/tst_*
+
+# IDE files
+.idea/
+.vscode/
+*.pro.user
+*.autosave
+*~
+
+# Qt generated
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*_autogen/
+
+# Shared memory
+/dev/shm/ipc_*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
