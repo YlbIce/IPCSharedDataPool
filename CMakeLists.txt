@@ -9,11 +9,22 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(BUILD_TESTS "构建单元测试" ON)
 option(BUILD_APPS "构建应用程序" OFF)
 option(BUILD_EXAMPLES "构建示例程序" OFF)
+option(BUILD_IEC61850 "构建IEC61850功能模块" ON)
 
-# Qt自动moc (仅用于需要Qt的模块)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# ========== libiec61850 集成 ==========
+
+set(LIBIEC61850_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+set(LIBIEC61850_INCLUDE_DIR "${LIBIEC61850_ROOT}/include")
+set(LIBIEC61850_LIBRARY_DIR "${LIBIEC61850_ROOT}/lib")
+
+# 链接路径
+link_directories(${LIBIEC61850_LIBRARY_DIR})
+include_directories(${LIBIEC61850_INCLUDE_DIR})
+
+if(BUILD_IEC61850)
+    message(STATUS "Building IEC61850 module with libiec61850")
+    add_definitions(-DHAS_LIBIEC61850)
+endif()
 
 # 编译选项
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pthread")
@@ -31,7 +42,7 @@ target_include_directories(pugixml PUBLIC
 
 # ========== 核心库 (纯C++，无Qt依赖) ==========
 
-add_library(IPCSharedDataPool SHARED
+set(CORE_SOURCES
     src/SharedDataPool.cpp
     src/IPCEventCenter.cpp
     src/DataPoolClient.cpp
@@ -40,6 +51,21 @@ add_library(IPCSharedDataPool SHARED
     src/VotingEngine.cpp
     src/IEC61850Mapper.cpp
 )
+
+if(BUILD_IEC61850)
+    list(APPEND CORE_SOURCES
+        src/IEC61850Server.cpp
+        src/GooseAdapter.cpp
+        src/GooseReceiverAdapter.cpp
+        src/SVAdapter.cpp
+src/SVAdapter.cpp
+src/ReportAdapter.cpp
+src/ReportAdapter.cpp
+src/LogService.cpp
+    )
+endif()
+
+add_library(IPCSharedDataPool SHARED ${CORE_SOURCES})
 
 target_include_directories(IPCSharedDataPool
     PUBLIC
@@ -53,6 +79,13 @@ target_link_libraries(IPCSharedDataPool
         rt
         pugixml
 )
+
+if(BUILD_IEC61850)
+    target_link_libraries(IPCSharedDataPool
+        PUBLIC
+            iec61850
+    )
+endif()
 
 # ========== 单元测试 ==========
 
@@ -87,21 +120,27 @@ if(BUILD_TESTS)
     # Qt测试程序 (仅测试程序使用Qt)
     find_package(Qt5 COMPONENTS Core Test QUIET)
     if(Qt5_FOUND)
+        set(CMAKE_AUTOMOC ON)
+        set(CMAKE_AUTORCC ON)
+        set(CMAKE_AUTOUIC ON)
         add_executable(tst_soe_persist tests/tst_soe_persist.cpp)
-        target_link_libraries(tst_soe_persist 
-            IPCSharedDataPool 
-            Qt5::Core 
+        target_link_libraries(tst_soe_persist
+            IPCSharedDataPool
+            Qt5::Core
             Qt5::Test
         )
         add_test(NAME tst_soe_persist COMMAND tst_soe_persist)
 
         add_executable(tst_voting_iec61850 tests/tst_voting_iec61850.cpp)
-        target_link_libraries(tst_voting_iec61850 
-            IPCSharedDataPool 
-            Qt5::Core 
+        target_link_libraries(tst_voting_iec61850
+            IPCSharedDataPool
+            Qt5::Core
             Qt5::Test
         )
         add_test(NAME tst_voting_iec61850 COMMAND tst_voting_iec61850)
+        set(CMAKE_AUTOMOC OFF)
+        set(CMAKE_AUTORCC OFF)
+        set(CMAKE_AUTOUIC OFF)
     else()
         message(STATUS "Qt5 not found, skipping Qt-based tests")
     endif()
@@ -109,6 +148,14 @@ if(BUILD_TESTS)
     # 性能基准测试 (无Qt依赖)
     add_executable(tst_benchmark tests/tst_benchmark.cpp)
     target_link_libraries(tst_benchmark IPCSharedDataPool)
+    
+    # IEC61850测试
+    if(BUILD_IEC61850)
+        add_executable(tst_iec61850 tests/tst_iec61850.cpp)
+        target_link_libraries(tst_iec61850 IPCSharedDataPool)
+        add_test(NAME tst_iec61850 COMMAND tst_iec61850)
+        message(STATUS "  + tst_iec61850")
+    endif()
 endif()
 
 # ========== 安装配置 ==========
@@ -117,6 +164,12 @@ install(TARGETS IPCSharedDataPool pugixml
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
+
+if(BUILD_IEC61850)
+    install(FILES ${LIBIEC61850_LIBRARY_DIR}/libiec61850.so
+        DESTINATION lib
+    )
+endif()
 
 install(DIRECTORY include/ DESTINATION include)
 
@@ -137,6 +190,9 @@ if(BUILD_APPS)
     endif()
 
     if(Qt5_FOUND)
+        set(CMAKE_AUTOMOC ON)
+        set(CMAKE_AUTORCC ON)
+        set(CMAKE_AUTOUIC ON)
         message(STATUS "Qt5 found: ${Qt5_VERSION}")
         message(STATUS "Building test apps with QCustomPlot...")
         

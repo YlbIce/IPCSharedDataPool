@@ -41,12 +41,9 @@ dist:
 	ARCHIVE="IPCSharedDataPool-$$VERSION.tar.gz"; \
 	TMPDIR=$$(mktemp -d); \
 	mkdir -p "$$TMPDIR/IPCSharedDataPool-$$VERSION"; \
-	tar --exclude='.git' \
-		--exclude='build' \
-		--exclude='*.tar.gz' \
-		--exclude='examples' \
+	rsync -av --exclude='.git' --exclude='build' --exclude='*.tar.gz' --exclude='examples' \
 		--exclude='.github' \
-		-cf - . | tar -xf - -C "$$TMPDIR/IPCSharedDataPool-$$VERSION"; \
+		. "$$TMPDIR/IPCSharedDataPool-$$VERSION/" > /dev/null; \
 	tar -czf "$$ARCHIVE" -C "$$TMPDIR" "IPCSharedDataPool-$$VERSION"; \
 	rm -rf "$$TMPDIR"; \
 	echo "已创建: $$ARCHIVE"
