@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(BUILD_TESTS "构建单元测试" ON)
 option(BUILD_APPS "构建应用程序" OFF)
 option(BUILD_EXAMPLES "构建示例程序" OFF)
-option(BUILD_IEC61850 "构建IEC61850功能模块" ON)
+option(BUILD_IEC61850 "构建IEC61850功能模块" OFF)
 
 # ========== libiec61850 集成 ==========
 
@@ -117,6 +117,12 @@ if(BUILD_TESTS)
     target_link_libraries(tst_integration IPCSharedDataPool)
     add_test(NAME tst_integration COMMAND tst_integration)
 
+    # ProcessMonitor 测试
+    add_executable(tst_process_monitor tests/tst_process_monitor.cpp)
+    target_link_libraries(tst_process_monitor IPCSharedDataPool)
+    add_test(NAME tst_process_monitor COMMAND tst_process_monitor)
+    message(STATUS "  + tst_process_monitor")
+
     # Qt测试程序 (仅测试程序使用Qt)
     find_package(Qt5 COMPONENTS Core Test QUIET)
     if(Qt5_FOUND)
@@ -155,6 +161,18 @@ if(BUILD_TESTS)
         target_link_libraries(tst_iec61850 IPCSharedDataPool)
         add_test(NAME tst_iec61850 COMMAND tst_iec61850)
         message(STATUS "  + tst_iec61850")
+
+        # LogService 测试
+        add_executable(tst_log_service tests/tst_log_service.cpp)
+        target_link_libraries(tst_log_service IPCSharedDataPool)
+        add_test(NAME tst_log_service COMMAND tst_log_service)
+        message(STATUS "  + tst_log_service")
+
+        # 基础适配器测试
+        add_executable(tst_adapters_basic tests/tst_adapters_basic.cpp)
+        target_link_libraries(tst_adapters_basic IPCSharedDataPool)
+        add_test(NAME tst_adapters_basic COMMAND tst_adapters_basic)
+        message(STATUS "  + tst_adapters_basic")
     endif()
 endif()
 
